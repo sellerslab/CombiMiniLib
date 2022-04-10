@@ -24,4 +24,4 @@ colnames(saspInt$avg_Single) <- gsub("IPC298\\_","",colnames(saspInt$avg_Single)
 plotOrder <- c("spCas9-saCas9", "enCas12a","VCR1-WCR3","WCR3-VCR1","WCR2-WCR3",
                "SPCR1-WCR3","SPCR1-SCR27","SPCR1-SCR43","VCR1-SCR27","VCR1-SCR43")
 align_avana(inputlist = list(BalanceD_renamed_gene,saspInt),rowno=2,cor.ordered=F,orders=plotOrder,clSingle="IPC298")
-ggsave(filename = paste0(outdir,"singleKO_Avana_combined_",Sys.Date(),".pdf"),width=13,height=5.8)
+ggsave(filename = paste0(outdir,"/singleKO_Avana_combined_",Sys.Date(),".pdf"),width=13,height=5.8)
