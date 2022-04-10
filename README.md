@@ -1,6 +1,6 @@
 # CombiMiniLib
 
-Analysis Code for Manuscript "Comparative Optimization of Combinatorial CRISPR Screens".
+Analysis Code for Manuscript "**Comparative Optimization of Combinatorial CRISPR Screens**".
 
 Utility function and analysis pipeline are indexed R files above.
 
@@ -18,26 +18,26 @@ Please refer to below Figure Legend and table sheet for file look-up:
 
 **EXTENDED DATA FIGURE LEGEND**
 
-+ Extended data fig. 1: Composition of the combinatorial libraries.
-+ Extended data fig. 2: Quality controls for combinatorial systems and the screen performance.
-+ Extended data fig. 3: Evaluation of enCas12a and Cas9 sgRNA design.
-+ Extended data fig. 4: Comparison of LFC of pan-essential paralog pairs.
++ Extended data Fig. 1: Composition of the combinatorial libraries.
++ Extended data Fig. 2: Quality controls for combinatorial systems and the screen performance.
++ Extended data Fig. 3: Evaluation of enCas12a and Cas9 sgRNA design.
++ Extended data Fig. 4: Comparison of LFC of pan-essential paralog pairs.
 
 
 **SUPPLEMENTARY TABLE**
 
-Supplementary table 1: List of pan-essential genes
-Supplementary table 2: List of non-essential genes
-Supplementary table 3: List of pan-essential pairs
-Supplementary table 4: List of non-essential pairs
-Supplementary table 4: List of non-essential pairs
-Supplementary table 5: Cas9 sgRNA sequences and source
-Supplementary table 6: Cas9 sgRNA pair combinations
-Supplementary table 7: Cas12a sgRNA and PFAM annotation
-Supplementary table 8: Cas12a sgRNA pair combinations
-Supplementary table 9: Raw counts from CRISPR screens
-Supplementary table 10: LFC from CRISPR screens
-Supplementary table 11: GEMINI sensitive synergy score from CRISPR screens
++ Supplementary table 1: List of pan-essential genes
++ Supplementary table 2: List of non-essential genes
++ Supplementary table 3: List of pan-essential pairs
++ Supplementary table 4: List of non-essential pairs
++ Supplementary table 4: List of non-essential pairs
++ Supplementary table 5: Cas9 sgRNA sequences and source
++ Supplementary table 6: Cas9 sgRNA pair combinations
++ Supplementary table 7: Cas12a sgRNA and PFAM annotation
++ Supplementary table 8: Cas12a sgRNA pair combinations
++ Supplementary table 9: Raw counts from CRISPR screens
++ Supplementary table 10: LFC from CRISPR screens
++ Supplementary table 11: GEMINI sensitive synergy score from CRISPR screens
 
 **DATA AVAILABILITY**
 
