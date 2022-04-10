@@ -1,4 +1,5 @@
 # CombiMiniLib
+[![DOI](https://zenodo.org/badge/457059220.svg)](https://zenodo.org/badge/latestdoi/457059220)
 
 Analysis Code for Manuscript "**Comparative Optimization of Combinatorial CRISPR Screens**".
 
