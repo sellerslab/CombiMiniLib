@@ -38,7 +38,7 @@ LFCs_sample <- lapply(combs,function(c){
 LFCs_sample%<>%purrr::reduce(inner_join, by = "guidepair") 
 LFCs_sample%<>%column_to_rownames("guidepair")
 saveRDS(LFCs_sample,"Processed_Data/Minilib_JointLFC.rds")
-#===== Replicate Correlation (LFC level) =====
+#===== Replicate Correlation (Extended Figure 2a)  =====
 LFCs_repsLevel <- lapply(combs,function(c){
   counts_pgDNA <- 
     pooled_counts%>%
@@ -69,10 +69,4 @@ LFCs_repsLevel <- lapply(combs,function(c){
 })
 LFCs_repsLevel%<>%purrr::reduce(inner_join, by = "guidepair") 
 saveRDS(LFCs_repsLevel,"Processed_Data/Minilib_JointLFC_Replicate.rds")
-corLFCs <- LFCs_repsLevel%>%
-  select(-guidepair)%>%
-  cor(.)
-heatmaply::heatmaply_cor(corLFCs,limits = c(round(min(corLFCs),1)-0.05, 1),
-                         file=glue("{outdir}/MiniLibScreen_repCor.pdf"),
-                         width=1400,height=1100)
 

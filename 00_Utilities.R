@@ -3,7 +3,7 @@ pacman::p_load(stringr,Biostrings,glue,mgsub,
                magrittr,dplyr,tidyr,purrr,
                readr,openxlsx,
                ggpubr,ggtext,eulerr,ggplot2,RColorBrewer,
-               pbmcapply,pbapply)
+               pbmcapply,pbapply,taigr)
 import::from(data.table,"fread")
 import::from(tibble,"rownames_to_column","column_to_rownames")
 options(stringsAsFactors = F)
@@ -833,6 +833,89 @@ scatterP_minilib <- function(d,xVAR,yVAR,cVAR,outdir,i="IPC298-VCR1-WCR3",
   ggsave(glue("{outdir}/{Prefix}_Align_{i}_{Dat}.pdf"),width=5,height=5)
   return(p)
 }
+align_avana <- function(inputlist,rowno=2,cor.ordered=T,orders=NULL,clSingle=NULL,dataLoad=F){
+  cols <- sapply(inputlist,function(s) colnames(s$LFC))%>%unlist()
+  cls <- gsub("\\_.*","",cols)%>%unique()
+  if(dataLoad){DepMap_DataFetch()}
+  sample.sub <- Achilles_sample_info%>%
+    mutate(stripped_cell_line_name = gsub("\\_.*","",CCLE_name))%>%
+    filter(stripped_cell_line_name %in% cls)
+  avana.sub <- Achilles_guide_map%>%
+    mutate(gene =gsub(" \\(.*","",gene))%>%
+    select(sgrna,gene)
+  lfc.cls <- Achilles_replicate_map%>%filter(DepMap_ID %in% sample.sub$DepMap_ID)
+  lfc.avana <- Achilles_logfold_change[,lfc.cls$replicate_ID]%>%
+    as.data.frame()%>%
+    rownames_to_column("sgrna")%>%
+    gather(replicate_ID,lfc,-sgrna)%>%
+    inner_join(lfc.cls%>%select(replicate_ID,DepMap_ID),by="replicate_ID")%>%
+    inner_join(avana.sub,by="sgrna")%>%
+    group_by(gene,DepMap_ID)%>%
+    summarise(lfcAvana = mean(lfc))%>%
+    as.data.frame()%>%
+    inner_join(sample.sub%>%select(CCLE=stripped_cell_line_name,DepMap_ID),by="DepMap_ID")
+  single_avgs <- lapply(inputlist,function(s) s$avg_Single%>%as.data.frame()%>%rownames_to_column("gene")%>%
+                          gather(source,y,-gene)%>%
+                          mutate(Essentiality = case_when(gene %in% s$posctrl_gene~"yes",TRUE~"no")))%>%bind_rows()
+  single_avgs%<>%filter(source %in% orders)
+  singleNull <- length(intersect(gsub("\\_.*","",single_avgs$source),cls))
+  if(singleNull==0){
+    single_avgs%<>%mutate(cl = clSingle)
+  }else{
+    single_avgs%<>%mutate(cl = gsub("\\_.*","",source)) 
+  }
+  avana_combined <- single_avgs%>%inner_join(lfc.avana,by="gene")%>%filter(cl==gsub("\\_.*","",CCLE))
+  min_lim <- floor(apply(avana_combined%>%select(y,lfcAvana),2,min,na.rm=T)%>%min())
+  max_lim <- ceiling(apply(avana_combined%>%select(y,lfcAvana),2,max,na.rm=T)%>%max())
+  lims <- c(min_lim,max_lim)
+  pearson_cors <- avana_combined%>%
+    group_by(source)%>%
+    summarize(cors =  paste("r =", signif(cor(y, lfcAvana, use = "pairwise.complete"), 3)))
+  
+  if(cor.ordered){
+    pearson_cors%<>%mutate(
+      source = factor(source,levels = 
+                        (pearson_cors%>%arrange(cors)%>%pull(source)),
+                      ordered = TRUE))
+    avana_combined%<>%mutate(source=factor(source,levels = 
+                                             (pearson_cors%>%arrange(cors)%>%pull(source)),
+                                           ordered = TRUE))
+  }else{
+    pearson_cors%<>%mutate(
+      source = factor(source,levels = orders,
+                      ordered = TRUE))
+    avana_combined%<>%mutate(source=factor(source,levels = orders,
+                                           ordered = TRUE))
+  }
+  scatter_avana <- ggplot(avana_combined, aes(x=lfcAvana, y=y,color=Essentiality)) +
+    geom_rect(aes(xmin = -Inf, xmax = -1, ymin = -Inf, ymax = -1),
+              fill = "#fbf7f7",linetype = "longdash",color = "tomato4")+
+    geom_abline(intercept = 0)+ 
+    geom_point(size=1.3,data = .%>%filter(Essentiality=="no"), alpha=0.8) +
+    geom_point(size = 1.3,data = .%>%filter(Essentiality=="yes"), alpha=0.8)+
+    facet_wrap(~source,nrow=rowno,scales = "free")+
+    scale_color_manual(values=c("grey50","red3"),labels = c( "Others","Pan-essential genes"))+
+    geom_text(data = pearson_cors,aes(x = -4.8, y =1.8, color = NULL,label=cors),show.legend = FALSE,
+              size=4.5,inherit.aes = FALSE,family="Times")+
+    theme(plot.title = element_text(color='black', hjust = 0.5),
+          plot.background = element_blank(),
+          panel.background = element_blank(),
+          panel.border = element_rect(color = "black", size = 0.5, fill = NA),
+          panel.grid = element_blank(),
+          axis.text = element_text(color='black'),
+          legend.key = element_rect(fill = NA),
+          legend.position ="none"
+    )+
+    scale_x_continuous(limits=lims) + scale_y_continuous(limits=lims)+
+    guides(colour = guide_legend(override.aes = list(size=3)))+
+    labs(x="LFC (Avana)", y = "LFC (Single gene - AAVS1)")+
+    theme(
+      strip.background = element_blank(),
+      strip.text.x = element_text(hjust = 0,colour = "black"))+
+    geom_hline(yintercept  = 0,linetype = "longdash")+ 
+    geom_vline(xintercept  = 0,linetype = "longdash")
+  return(scatter_avana)
+}
 #===== Manhattan Plot =====
 scores_SigTest <- function(pairLFC,score,nc_pairs){
   message("Calculating p values and FDR ...")
@@ -880,3 +963,53 @@ match_matrix <- function(matrixList,cols){
   oMat <- reduced_mat[,cols]
   return(oMat)
 } 
+#===== Boxplot Stack =====
+boxplot_stack <- function(LFC,map,gene_pairs,cell_line,nc_gene="AAVS1",gene_join=":"){
+  map%<>%mutate(pair = pmap_chr(list(symbol1,symbol2),~paste0(sort(c(...)),collapse = gene_join)))
+  comb_D <- lapply(gene_pairs,function(p){
+    ls <- c(strsplit(p,split=gene_join)[[1]],p)
+    g <- gsub(paste0(gene_join,".*"),"",p)
+    h <- gsub(paste0(".*",gene_join),"",p)
+    nc_pairs <- expand.grid(nc_gene,c(g,h),stringsAsFactors = F)%>%
+      mutate(spair = pmap_chr(list(Var1,Var2),~paste0(sort(c(...)),collapse = gene_join)))%>%
+      pull(spair)
+    lfc_boxplot <- data.frame(LFC[map%>%filter(pair %in% c(nc_pairs,p))%>%pull(rowname),cell_line])%>%
+        rownames_to_column("rowname")%>%
+        gather(sample,lfc_cl,-rowname)%>%
+        inner_join(map%>%select(rowname,symbol1,symbol2,pair),by="rowname")%>%
+        mutate(pair=gsub(paste0(paste0(gene_join,nc_gene),"|",paste0(nc_gene,gene_join)),"",pair))%>%
+        mutate(spairs=p)%>%
+        mutate(ind = factor(case_when(pair==ls[1]~1,pair==ls[2]~2,TRUE~3),levels=c(3,2,1)))
+  })%>%bind_rows()
+  all_levels <- lapply(gene_pairs,function(p) c(strsplit(p,split=gene_join)[[1]],p))%>%unlist()%>%unique()
+  r_levels <- all_levels[!all_levels%in% c("VPS4A:VPS4B","VPS4A","VPS4B","KATNAL2","KATNAL2:VPS4A")]
+  all_levels <- c(r_levels,"KATNAL2:VPS4A","VPS4A","VPS4B","KATNAL2","VPS4A:VPS4B")
+  comb_D%<>%mutate(pair = factor(pair,levels=all_levels))
+  comb_D%<>%mutate(sample = gsub(".*\\_","",sample))%>%
+    mutate(sample =factor(sample,levels=c("enCas12a","WCR2.WCR3","VCR1.WCR3")))
+  p <- ggplot(comb_D,aes(x = pair,y = lfc_cl,fill=ind))+
+    facet_grid(sample~spairs, scales = "free")+
+    geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = 0),
+              fill = "#fbf7f7",linetype = "longdash",color = "tomato4")+
+    geom_boxplot(outlier.shape = NA)+
+    scale_fill_manual(values=c("#E69F00", "#666666","#999999"))+
+    geom_jitter(size=1.5,width = 0.3,aes(colour=ind),shape=18)+
+    scale_color_manual(values=c("#999999", "#E69F00","#E69F00"))+
+    theme(plot.title = element_text(color='black', hjust = 0.5),
+          plot.background = element_blank(),
+          panel.background = element_blank(),
+          panel.border = element_rect(color = "black", size = 1, fill = NA),
+          text = element_text(color='black'),
+          panel.grid = element_blank(),
+          axis.text.y = element_text(color='black',family = "Times"),
+          axis.text.x = element_text(color='black',family = "Helvetica",angle=90,hjust=0.95,vjust=0.2),
+          strip.background = element_blank(),
+          axis.title.x  = element_blank(),
+          legend.position = "none",
+          strip.text.x  = element_blank()
+    )+
+    labs(y="LFC")+
+    geom_hline(yintercept = 0,linetype="dashed",color="tomato3")+
+    ylim(-6, 2)
+  return(p)
+}
