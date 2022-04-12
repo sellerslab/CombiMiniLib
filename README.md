@@ -42,7 +42,13 @@ Please refer to below Figure Legend and table sheet for file look-up:
 
 **DATA AVAILABILITY**
 
+All sequencing data is deposited in SRA under project [PRJNA792754](https://www.ncbi.nlm.nih.gov/bioproject/?term=PRJNA792754).
+
 The raw data for running the analysis pipeline can be found in this [raw data dropbox folder](https://www.dropbox.com/sh/t02poiw0hjgs6vc/AAAAu30_3TSWRZOk3fKqkGe3a?dl=0) and also in this [Figshare link](https://figshare.com/articles/dataset/Zipped_Raw_data/19565902).
 
-The intermediate/source data for reproducing the Figures can be found in this [processed data dropbox folder](https://www.dropbox.com/sh/g2afi8ra56gkw4d/AACxWZA4QedR_H-EdDNCfdkca?dl=0) also in this [Figshare link](https://figshare.com/articles/dataset/Zipped_Processed_data/19565908).
+The intermediate/processed data for reproducing the Figures can be found in this [processed data dropbox folder](https://www.dropbox.com/sh/g2afi8ra56gkw4d/AACxWZA4QedR_H-EdDNCfdkca?dl=0) also in this [Figshare link](https://figshare.com/articles/dataset/Zipped_Processed_data/19565908).
+
+The source data for each figure and supplementary table (in xlsx format, separate tabs) can be found [here](https://www.dropbox.com/sh/rf9zdwguqfiad0r/AABlFIBD7z920pNrMv1rLv1wa?dl=0).
+
+
 
