@@ -1,18 +1,31 @@
+#===== Env Specification and library loading  ====
+rm(list=ls())
+# Set the wokring directory to a folder containing three folders
+# Processed_data
+# Raw_data
+# CodeOrg
+# If you have different names for those three folders and prefer not changing
+# Please change the strings for all 3 variables specified below
 setwd("~/ResubPrep/")
-source("CodeOrg/00_Utilities.R")
+CodeOrg <- "CodeOrg"
+Processed_Data <- "Processed_Data"
+Raw_Data <- "Raw_Data"
+source(glue::glue("{CodeOrg}/00_Utilities.R"))
 #"The output directory you would like to put"
-outdir <- "~/Desktop"
+outdir <- "~/Desktop/Figure5"
+if(!dir.exists(outdir)){dir.create(outdir)}
 Dat <- Sys.Date()
+sessionInfo()
 #===== Manhattan Plot (Figure 5a) =====
 # (shared 296/454 pairs, 46 negative control pairs)
-minilibInt <- readRDS("Processed_Data/minilib_Init.rds")
-saspInt <- readRDS("Processed_Data/SpSaLib_Init.rds")
+minilibInt <- readRDS(glue("{Processed_Data}/minilib_Init.rds"))
+saspInt <- readRDS(glue("{Processed_Data}/SpSaLib_Init.rds"))
 thres <- -log10(1e-3)
 subset_system <- c("IPC298_VCR1-WCR3","IPC298_WCR2-WCR3","IPC298_enCas12a","IPC298_spCas9-saCas9")
 rawPair_Comb <- match_matrix(list(minilibInt$avg_Double,saspInt$avg_Double),subset_system)
 Synergy_Comb <- match_matrix(list(-minilibInt$score,-saspInt$score),subset_system)
 ncPairs_Shared <- intersect(minilibInt$negctrl_pair, saspInt$negctrl_pair)
-scores_SigTest(rawPair_Comb,Synergy_Comb,ncPairs_Shared)%>%
+fig5a <- scores_SigTest(rawPair_Comb,Synergy_Comb,ncPairs_Shared)%>%
   mutate(sample = gsub("IPC298\\_","",sample))%>%
   mutate(sample = factor(sample,levels = gsub("IPC298\\_","",subset_system)))%>%
   ggplot(data = ., aes(x = genepair, y = GEMINI.score, color = LFC)) + 
@@ -31,24 +44,19 @@ scores_SigTest(rawPair_Comb,Synergy_Comb,ncPairs_Shared)%>%
         strip.background = element_blank(),
         axis.title.y = element_text(size = rel(1), colour = "black",family = "Helvetica"),
         strip.text.x = element_text(size = rel(1), colour = "black", angle = 0,family = "Helvetica"))
-ggsave(filename = glue("{outdir}/ManhattanShared_46Neg_IPC298_{Dat}.pdf"),width = 12,height = 6)
-
-
-
-
-
+ggsave(fig5a,filename = glue("{outdir}/Figure5a_ManhattanShared_46Neg_IPC298_{Dat}.pdf"),width = 12,height = 6)
 #===== Synergy versus RAW gene pair LFC (Figure 5b) =====
 ownInterests <- c("BRAF;RAF1","DUSP4;DUSP6","MAP2K1;MAP2K2",
                   "MAPK1;MAPK3","PPP2CA;PPP2CB",
                   "RPS6KA1;RPS6KB1","RPS6KA3;RPS6KB1","YWHAE;YWHAZ")
 pS <- 4
 lS <- 3.5
-minilib <- readRDS("Processed_Data/minilib_Init.rds")
+minilib <- readRDS(glue("{Processed_Data}/minilib_Init.rds"))
 oneEss <- data.frame(gp=rownames(minilib$score))%>%
   filter(!grepl("nonTarget",gp))%>%
   separate(gp,c("g1",'g2'),remove=F)%>%
   filter(g1 %in% minilib$posctrl_gene|g2 %in% minilib$posctrl_gene)
-cbind(minilib$avg_Double[rownames(minilib$score),"IPC298_VCR1-WCR3"],
+fig5b <- cbind(minilib$avg_Double[rownames(minilib$score),"IPC298_VCR1-WCR3"],
       minilib$score[,"IPC298_VCR1-WCR3"])%>%
   as.data.frame()%>%
   set_colnames(c("AvgLFC","Synergy"))%>%
@@ -80,4 +88,9 @@ cbind(minilib$avg_Double[rownames(minilib$score),"IPC298_VCR1-WCR3"],
   geom_hline(yintercept  = 0,linetype = "longdash")+ 
   geom_vline(xintercept  = 0,linetype = "longdash")+
   labs(x="LFC",y="Sensitive Synergy Score",title="VCR1-WCR3: IPC298")
-ggsave(filename = glue("{outdir}/Synergy_LFC_IPC298_3cols.pdf"),width = 6,height = 6)v
+ggsave(fig5b,filename = glue("{outdir}/Figure5b_Synergy_LFC_IPC298_3cols.pdf"),width = 6,height = 6)
+#===== Source data output =====
+write.xlsx(list("Panel a" = fig5a$data,
+                "Panel b" = fig5b$data),
+           glue("{outdir}/Figure5_sourceData_{Dat}.xlsx"),
+           overwrite = T)

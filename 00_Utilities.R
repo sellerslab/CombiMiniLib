@@ -651,8 +651,9 @@ SepBar <- function(sep_metrics,sortm = "AUC-ROC",hj=1,colorp="Dark2"){
 SepROC <- function(confusion,labelLevels,colorp="Paired",manucol=NULL,ptitle=""){
   confusion%<>%mutate(colorgrp = factor(sample,levels = labelLevels))
   if(is.null(manucol)){
-    if(colorp=="Paired" & length(labelLevels)<=12){
+    if(colorp=="Paired"){
       mycolors <- brewer.pal(length(labelLevels), colorp)
+      mycolors <- mycolors[c(1,2,4,3,6,5,8,7,10,9)[1:length(labelLevels)]]
     }else{mycolors <- colorRampPalette(brewer.pal(8, colorp))(length(labelLevels))}
     mycolors <- mycolors[c(2,1,4,3,6,5,8,7,10,9)[1:length(labelLevels)]]
   }else{
@@ -989,7 +990,7 @@ boxplot_stack <- function(LFC,map,gene_pairs,cell_line,nc_gene="AAVS1",gene_join
     mutate(sample =factor(sample,levels=c("enCas12a","WCR2.WCR3","VCR1.WCR3")))
   p <- ggplot(comb_D,aes(x = pair,y = lfc_cl,fill=ind))+
     facet_grid(sample~spairs, scales = "free")+
-    geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = 0),
+    geom_rect(aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = -1),
               fill = "#fbf7f7",linetype = "longdash",color = "tomato4")+
     geom_boxplot(outlier.shape = NA)+
     scale_fill_manual(values=c("#E69F00", "#666666","#999999"))+
@@ -1009,7 +1010,7 @@ boxplot_stack <- function(LFC,map,gene_pairs,cell_line,nc_gene="AAVS1",gene_join
           strip.text.x  = element_blank()
     )+
     labs(y="LFC")+
-    geom_hline(yintercept = 0,linetype="dashed",color="tomato3")+
+    geom_hline(yintercept = 0,linetype="dashed",color="black")+
     ylim(-6, 2)
   return(p)
 }

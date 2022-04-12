@@ -1,13 +1,26 @@
+#===== Env Specification and library loading  ====
+rm(list=ls())
+# Set the wokring directory to a folder containing three folders
+# Processed_data
+# Raw_data
+# CodeOrg
+# If you have different names for those three folders and prefer not changing
+# Please change the strings for all 3 variables specified below
 setwd("~/ResubPrep/")
-source("CodeOrg/00_Utilities.R")
+CodeOrg <- "CodeOrg"
+Processed_Data <- "Processed_Data"
+Raw_Data <- "Raw_Data"
+source(glue::glue("{CodeOrg}/00_Utilities.R"))
 #"The output directory you would like to put"
-outdir <- "~/Desktop"
+outdir <- "~/Desktop/ExtendedFigure3"
+if(!dir.exists(outdir)){dir.create(outdir)}
 Dat <- Sys.Date()
+sessionInfo()
 #===== PAM investigation (Extended Figure 3a) =====
-minilib <- readRDS("Processed_Data/minilib_Init.rds")
-cas12a_pam <- readRDS("Raw_Data/enCas12a_fullSource.rds")%>%
+minilib <- readRDS(glue("{Processed_Data}/minilib_Init.rds"))
+cas12a_pam <- readRDS(glue("{Raw_Data}/enCas12a_fullSource.rds"))%>%
   select(PAM,gRNA,gene=symbol,Tier,ontar_Rank)
-cas12a_oligos <- readRDS("Raw_Data/Minilib_Annotation.rds")
+cas12a_oligos <- readRDS(glue("{Raw_Data}/Minilib_Annotation.rds"))
 mapping_nc_cas12a <- cas12a_oligos%>%
   select(rowname = Cas12a_oligo,Cas9_oligo,Label,symbol1,symbol2)%>%
   separate(rowname,c("gRNA_Left","gRNA_Right"),sep="_",remove=F)%>%
@@ -37,7 +50,7 @@ cas12a_single_gene <- mapping_nc_cas12a%>%
   mutate(Tier = factor(case_when(grepl("TTT[ACG]",PAM)~"TTTV",TRUE~Tier),
                        levels = c("TTTV","Tier 1","Tier 2","Tier 3")))%>%
   as.data.frame()
-ggplot(cas12a_single_gene%>%
+s3a <- ggplot(cas12a_single_gene%>%
          filter(Gene %in% minilib$posctrl_gene)%>%
          select(Tier,LFC=IPC298_enCas12a),
        aes(x=Tier, y=LFC,fill=Tier)) +
@@ -54,10 +67,10 @@ ggplot(cas12a_single_gene%>%
         legend.position ="none"
   )+
   labs(x="PAM",y="LFC")+
-  geom_hline(yintercept =  0,linetype = "dashed")+
-  ggsave(width = 4,height = 4,filename = glue("{outdir}/posgene53_LFC_pam_tier1-{Dat}.pdf"))
+  geom_hline(yintercept =  0,linetype = "dashed")
+ggsave(s3a,width = 4,height = 4,filename = glue("{outdir}/ExFigure3a_posgene53_LFC_pam_tier1_{Dat}.pdf"))
 #===== On-target Investigation (Extended Figure 3b) =====
-cas12a_single_gene%>%
+s3b <- cas12a_single_gene%>%
   mutate(BIN_ontar = case_when(ontar_Rank<=15~"Top 15",TRUE~"Others"))%>%
   filter(Gene %in%minilib$posctrl_gene)%>%
   select(Gene,BIN_ontar,LFC=IPC298_enCas12a)%>%
@@ -74,12 +87,12 @@ cas12a_single_gene%>%
         legend.key = element_rect(fill = NA),
         legend.position ="none",
         axis.title.x = element_blank())
-ggsave(width = 4,height = 4,
-       filename = glue("{outdir}/ontarget_boxplot-{Dat}.pdf"))
+ggsave(s3b,width = 4,height = 4,
+       filename = glue("{outdir}/ExFigure3b_ontarget_boxplot_{Dat}.pdf"))
 #===== Avana vs RuleSet2Only (Extended Figure 3c) =====
-minilib <- readRDS("Processed_Data/minilib_Init.rds")
-sgRNA_source <- readRDS("Raw_Data/cas9_completeAnnot.rds")
-mapping_12 <- readRDS("Processed_Data/SideMapping_Minilib.rds") 
+minilib <- readRDS(glue("{Processed_Data}/minilib_Init.rds"))
+sgRNA_source <- readRDS(glue("{Raw_Data}/cas9_completeAnnot.rds"))
+mapping_12 <- readRDS(glue("{Processed_Data}/SideMapping_Minilib.rds"))
 nctrl.sgRNA <- c("TCGATCCGCCCCGTCGTTCC","AGGGAGACATCCGTCGGAGA")
 ctrl_pastten <- paste0(paste0("\\_",nctrl.sgRNA,"|",nctrl.sgRNA,"\\_"),collapse = "|")
 mapping_12%<>%mutate(sgRNA = gsub(ctrl_pastten,"",rowname))
@@ -114,4 +127,11 @@ RuleComp <- lapply(list(minilib$posctrl_gene,minilib$negctrl_gene),function(s){
     labs(x=NULL,y="LFC (sgRNA-AAVS1)")
   return(p)})
 egg::ggarrange(plots = RuleComp,nrow = 1,top ="Essential (Left) and Non-essential (Right)")%>%
-  ggsave(width  =10,height=5,filename = glue("{outdir}/AvanaRs2_comparison_boxplot.pdf"))
+  ggsave(width  =10,height=5,filename = glue("{outdir}/ExFigure3cd_AvanaRs2_comparison_boxplot_{Dat}.pdf"))
+#===== Source data output =====
+write.xlsx(list("Panel a" = s3a$data,
+                "Panel b" = s3b$data,
+                "Panel c" = RuleComp[[1]]$data,
+                "Panel d" = RuleComp[[2]]$data),
+           glue("{outdir}/ExFigure3_sourceData_{Dat}.xlsx"),
+           overwrite = T)

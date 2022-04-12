@@ -1,17 +1,30 @@
+#===== Env Specification and library loading  ====
+rm(list=ls())
+# Set the wokring directory to a folder containing three folders
+  # Processed_data
+  # Raw_data
+  # CodeOrg
+# If you have different names for those three folders and prefer not changing
+# Please change the strings for all 3 variables specified below
 setwd("~/ResubPrep/")
-source("CodeOrg/00_Utilities.R")
+CodeOrg <- "CodeOrg"
+Processed_Data <- "Processed_Data"
+Raw_Data <- "Raw_Data"
+source(glue("{CodeOrg}/00_Utilities.R"))
 #"The output directory you would like to put"
-outdir <- "~/Desktop"
+outdir <- "~/Desktop/Figure2"
+if(!dir.exists(outdir)){dir.create(outdir)}
 Dat <- Sys.Date()
-#===== Gene-Level ctrl separation  (Figure 1a-d) =====
-minilib <- readRDS("Processed_Data/minilib_Init.rds")
-SpSaLib <- readRDS("Processed_Data/SpSaLib_Init.rds")
+sessionInfo()
+#===== Gene-Level ctrl separation  (Figure 2a-d) =====
+minilib <- readRDS(glue("{Processed_Data}/minilib_Init.rds"))
+SpSaLib <- readRDS(glue("{Processed_Data}/SpSaLib_Init.rds"))
 combLib <- list("minilib"=minilib,"SpSaLib"=SpSaLib)
 system3_geneSep <- EvalWrapper(combLib)
 rocList <- lapply(c("IPC298","MELJUSO","PK1"),function(l){
   if(l=="IPC298"){
     SepBar(system3_geneSep$metrics%>%filter(grepl(l,cl))%>%mutate(cl = gsub(paste0(l,"\\_"),"",cl)),colorp="Paired")%>%
-      ggsave(plot = .,filename = glue("{outdir}/GeneSeparation_Bar_{l}_{Dat}.pdf"),width=14,height=5)
+      ggsave(plot = .,filename = glue("{outdir}/Figure2ac_GeneSeparation_Bar_{l}_{Dat}.pdf"),width=14,height=5)
   }
   labelMap <- system3_geneSep$metrics%>%
     filter(grepl(l,cl))%>%
@@ -21,7 +34,7 @@ rocList <- lapply(c("IPC298","MELJUSO","PK1"),function(l){
     unite("Label",c("cl","fakeB","values","fakeE"),sep="",remove=F)%>%
     mutate(Label = gsub(paste0(l,"\\_"),"",Label))
   if(l !="IPC298"){
-    cols <-c("#1F78B4","#33A02C","#E31A1C","#FB9A99")
+    cols <-c("#1F78B4","#B2DF8A","#FB9A99","#E31A1C")
   }else{cols <- NULL}
   rocP<- SepROC(system3_geneSep$confusion%>%
                   filter(grepl(l,sample))%>%
@@ -31,10 +44,10 @@ rocList <- lapply(c("IPC298","MELJUSO","PK1"),function(l){
                 manucol = cols)
   return(rocP)
 })
-ggarrange(plotlist = rocList,nrow=1)%>%ggsave(plot=.,glue("{outdir}/GeneSeparation_ROC_{Dat}.pdf"),width = 16.8,height=6.2)
+ggarrange(plotlist = rocList,nrow=1)%>%ggsave(plot=.,glue("{outdir}/Figure2d_GeneSeparation_ROC_{Dat}.pdf"),width = 14,height=5.2)
 #===== Gene-Level left-right comparison (Figure 2e) =====
-minilibInt <- readRDS("Processed_Data/minilib_Init.rds")
-saspInt <- readRDS("Processed_Data/SpSaLib_Init.rds")
+minilibInt <- readRDS(glue("{Processed_Data}/minilib_Init.rds"))
+saspInt <- readRDS(glue("{Processed_Data}/SpSaLib_Init.rds"))
 BalanceD_renamed_gene <- minilibInt
 BalanceD_renamed_gene$LFC%<>%.[,grep("IPC298",colnames(minilibInt$LFC),value=T)]
 colnames(BalanceD_renamed_gene$LFC) <- gsub("IPC298\\_","",colnames(BalanceD_renamed_gene$LFC))
@@ -69,7 +82,7 @@ ggsave(single_lf_mean+
                strip.text.x = element_text(hjust = 0,colour = "black"))+
          geom_text(data = percD,aes(x = -5.3, y = -0.6, label=phits),
                    show.legend = FALSE,size=4.5,inherit.aes = F,family="Times",color = "firebrick"),
-       filename = paste0(outdir,"single_left_right_comparison_mean_",Sys.Date(),".pdf"),width=13.9,height=6.5)
+       filename = glue("{outdir}/Figure2e_single_left_right_comparison_mean_{Dat}.pdf"),width=13.9,height=6.5)
 single_lf_mean$data%>%
   filter(side1< -1 & side2 < -1 & Essentiality=="yes")%>%
   group_by(source)%>%
@@ -82,3 +95,17 @@ single_lf_mean$data%>%
   ggtexttable(., rows = NULL, theme = ttheme("lBlueWhite")) %>%
   tab_add_hline(at.row = 1:2, row.side = "top", linewidth = 2)
 ggsave(glue("{outdir}/EssHit_Table.png",width = 3,height = 3))
+#===== Source data output =====
+cls <- c("IPC298","MELJUSO","PK1")
+Fig2d <- system3_geneSep$metrics%>%
+  filter(grepl(l,cl))%>%mutate(cl = gsub(paste0(l,"\\_"),"",cl))%>%
+  filter(metric=="NNMD")
+Fig2a2c <- lapply(seq_along(rocList),function(s) rocList[[s]]$data%>%
+                    mutate(title=glue("Single gene- {cls[s]}"))%>%
+                    mutate(panel = glue("Panel {letters[s]}")))%>%
+  bind_rows()
+write.xlsx(list("Panel a-c" = Fig2a2c,
+                "Panel d" = Fig2d,
+                "Panel e" = single_lf_mean$data),
+           glue("{outdir}/Figure2_sourceData_{Dat}.xlsx"),
+           overwrite = T)
