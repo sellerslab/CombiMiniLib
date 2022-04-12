@@ -12,8 +12,10 @@ Processed_Data <- "Processed_Data"
 Raw_Data <- "Raw_Data"
 source(glue::glue("{CodeOrg}/00_Utilities.R"))
 #"The output directory you would like to put"
-outdir <- "~/Desktop/ExtendedFigure1"
+outdir <- "~/Desktop/SuppFigure1"
+SourceOutdir <- "~/Desktop/SourceDOut"
 if(!dir.exists(outdir)){dir.create(outdir)}
+if(!dir.exists(SourceOutdir)){dir.create(SourceOutdir)}
 Dat <- Sys.Date()
 sessionInfo()
 #===== Mini-Lib sgRNA rank and pfam distribution (Extended Figure 1e-h) =====
@@ -21,12 +23,12 @@ Cas9_lib<- readRDS(glue("{Raw_Data}/sgRNASource_Cas9_enCas12a.rds"))$Cas9_sgRNA
 enCas12a_lib  <- readRDS(glue("{Raw_Data}/sgRNASource_Cas9_enCas12a.rds"))$enCas12a_sgRNA
 #S1e
 pfam_cas9 <- Cas9_lib%>%filter(grepl("pfam",source))%>%nrow()
-pdf(glue("{outdir}/ExFigure1e_Cas9_sgRNASourcePie_pFAM_{Dat}.pdf"),width = 6,height = 6)
+pdf(glue("{outdir}/SuppFigure1e_Cas9_sgRNASourcePie_pFAM_{Dat}.pdf"),width = 6,height = 6)
 pie(c(pfam_cas9,nrow(Cas9_lib)-pfam_cas9),labels = c("pFAM (62%)","non-pFAM"), 
     density=80 ,col=c("#0073C2FF", "#EFC000FF"))
 dev.off()
 Cas9_sources <- c("Avana","GPP")
-pdf(glue("{outdir}/ExFigure1e_Cas9_sgRNASourceVenn_AvanaRuleSet2_{Dat}.pdf"))
+pdf(glue("{outdir}/SuppFigure1e_Cas9_sgRNASourceVenn_AvanaRuleSet2_{Dat}.pdf"))
 lapply(Cas9_sources,function(s) Cas9_lib%>%filter(grepl(s,source))%>%pull(gRNA))%>%vennCount(.,c("Avana","Rule Set2"))%>%
   euler()%>%
   plot(., counts = TRUE, font=2, cex=2, alpha=0.6,quantities = TRUE,
@@ -46,10 +48,10 @@ s1f <- Cas9_lib%>%
         axis.title = element_text(color='black',family = "Helvetica"),
         panel.border = element_rect(color = "black", size = 1, fill = NA))+
   labs(x="Pick Order (Rule Set2 + Off-target)",y="Frequency",title = "Cas9 sgRNAs")
-ggsave(s1f,filename = glue("{outdir}/ExFigure1f_Cas9_RuleSet2_PickOrder_{Dat}.pdf"),width = 4,height = 4)
+ggsave(s1f,filename = glue("{outdir}/SuppFigure1f_Cas9_RuleSet2_PickOrder_{Dat}.pdf"),width = 4,height = 4)
 #S1g
 pfam_cas12a <- enCas12a_lib%>%filter(pFAM!="")%>%nrow()
-pdf(glue("{outdir}/ExFigure1g_enCas12a_sgRNASourcePie_pFAM_{Dat}.pdf"),width = 6,height = 6)
+pdf(glue("{outdir}/SuppFigure1g_enCas12a_sgRNASourcePie_pFAM_{Dat}.pdf"),width = 6,height = 6)
 pie(c(pfam_cas12a,nrow(enCas12a_lib)-pfam_cas12a),labels = c("pFAM (65%)","non-pFAM") , density=80 ,col=c("#0073C2FF", "#EFC000FF"))
 dev.off()
 #S1h
@@ -63,7 +65,7 @@ s1h <- ggplot(enCas12a_lib, aes(x=Order))+
         axis.title = element_text(color='black',family = "Courier"),
         panel.border = element_rect(color = "black", size = 1, fill = NA))+
   labs(x="Pick Order (enPAM + GB + Off-target)",y="Frequency",title = "enCas12a sgRNAs")
-ggsave(s1h,filename = glue("{outdir}/ExFigure1h_enCas12a_PickOrder_{Dat}.pdf"),width = 4,height = 4)
+ggsave(s1h,filename = glue("{outdir}/SuppFigure1h_enCas12a_PickOrder_{Dat}.pdf"),width = 4,height = 4)
 
 #===== Library Distribution (Extended Figure 1i) =====
 pooled_counts <- readRDS(glue("{Processed_Data}/Minilib_JointCounts.rds"))
@@ -102,12 +104,12 @@ efig1i <- minilib_libs$plot+
                               family="Times",
                               override.aes = list(size=4,fill=NA)))+
   labs(x = "Relative rank", y = "Cumulative Fraction",title="Library distribution")
-ggsave(efig1i,filename = glue("{outdir}/ExFigure1i_distribution_minilib_{Dat}.pdf"),height = 6.8,width=6.5)
+ggsave(efig1i,filename = glue("{outdir}/SuppFigure1i_distribution_minilib_{Dat}.pdf"),height = 6.8,width=6.5)
 #===== Source data output =====
 write.xlsx(list("Panel e" = Cas9_lib,
                 "Panel f" = s1f$data,
                 "Panel g" = enCas12a_lib,
                 "Panel h" = s1h$data,
                 "Panel i" = efig1i$data),
-           glue("{outdir}/ExFigure1_sourceData_{Dat}.xlsx"),
+           glue("{SourceOutdir}/SuppFigure1_sourceData_{Dat}.xlsx"),
            overwrite = T)

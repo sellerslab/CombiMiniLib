@@ -12,8 +12,10 @@ Processed_Data <- "Processed_Data"
 Raw_Data <- "Raw_Data"
 source(glue::glue("{CodeOrg}/00_Utilities.R"))
 #"The output directory you would like to put"
-outdir <- "~/Desktop/ExtendedFigure3"
+outdir <- "~/Desktop/SuppFigure3"
+SourceOutdir <- "~/Desktop/SourceDOut"
 if(!dir.exists(outdir)){dir.create(outdir)}
+if(!dir.exists(SourceOutdir)){dir.create(SourceOutdir)}
 Dat <- Sys.Date()
 sessionInfo()
 #===== PAM investigation (Extended Figure 3a) =====
@@ -68,7 +70,7 @@ s3a <- ggplot(cas12a_single_gene%>%
   )+
   labs(x="PAM",y="LFC")+
   geom_hline(yintercept =  0,linetype = "dashed")
-ggsave(s3a,width = 4,height = 4,filename = glue("{outdir}/ExFigure3a_posgene53_LFC_pam_tier1_{Dat}.pdf"))
+ggsave(s3a,width = 4,height = 4,filename = glue("{outdir}/SuppFigure3a_posgene53_LFC_pam_tier1_{Dat}.pdf"))
 #===== On-target Investigation (Extended Figure 3b) =====
 s3b <- cas12a_single_gene%>%
   mutate(BIN_ontar = case_when(ontar_Rank<=15~"Top 15",TRUE~"Others"))%>%
@@ -88,7 +90,7 @@ s3b <- cas12a_single_gene%>%
         legend.position ="none",
         axis.title.x = element_blank())
 ggsave(s3b,width = 4,height = 4,
-       filename = glue("{outdir}/ExFigure3b_ontarget_boxplot_{Dat}.pdf"))
+       filename = glue("{outdir}/SuppFigure3b_ontarget_boxplot_{Dat}.pdf"))
 #===== Avana vs RuleSet2Only (Extended Figure 3c) =====
 minilib <- readRDS(glue("{Processed_Data}/minilib_Init.rds"))
 sgRNA_source <- readRDS(glue("{Raw_Data}/cas9_completeAnnot.rds"))
@@ -127,11 +129,11 @@ RuleComp <- lapply(list(minilib$posctrl_gene,minilib$negctrl_gene),function(s){
     labs(x=NULL,y="LFC (sgRNA-AAVS1)")
   return(p)})
 egg::ggarrange(plots = RuleComp,nrow = 1,top ="Essential (Left) and Non-essential (Right)")%>%
-  ggsave(width  =10,height=5,filename = glue("{outdir}/ExFigure3cd_AvanaRs2_comparison_boxplot_{Dat}.pdf"))
+  ggsave(width  =10,height=5,filename = glue("{outdir}/SuppFigure3cd_AvanaRs2_comparison_boxplot_{Dat}.pdf"))
 #===== Source data output =====
 write.xlsx(list("Panel a" = s3a$data,
                 "Panel b" = s3b$data,
                 "Panel c" = RuleComp[[1]]$data,
                 "Panel d" = RuleComp[[2]]$data),
-           glue("{outdir}/ExFigure3_sourceData_{Dat}.xlsx"),
+           glue("{SourceOutdir}/SuppFigure3_sourceData_{Dat}.xlsx"),
            overwrite = T)

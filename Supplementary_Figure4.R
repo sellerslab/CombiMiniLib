@@ -12,8 +12,10 @@ Processed_Data <- "Processed_Data"
 Raw_Data <- "Raw_Data"
 source(glue::glue("{CodeOrg}/00_Utilities.R"))
 #"The output directory you would like to put"
-outdir <- "~/Desktop/ExtendedFigure4"
+outdir <- "~/Desktop/SuppFigure4"
+SourceOutdir <- "~/Desktop/SourceDOut"
 if(!dir.exists(outdir)){dir.create(outdir)}
+if(!dir.exists(SourceOutdir)){dir.create(SourceOutdir)}
 Dat <- Sys.Date()
 sessionInfo()
 #===== Positive Control Examples (Extended Figure 4a) =====
@@ -34,7 +36,7 @@ top10_synleth <- synLeth%>%
 s4a <- boxplot_stack(LFC=minilib$LFC,map=minilib$annot,
               gene_pairs=top10_synleth,
               cell_line=c("IPC298_enCas12a","IPC298_WCR2-WCR3","IPC298_VCR1-WCR3"))
-ggsave(s4a,width  =10,height=7.5,filename = glue("{outdir}/ExFigure4a_AvanaRs2_comparison_boxplot_{Dat}.pdf"))
+ggsave(s4a,width  =10,height=7.5,filename = glue("{outdir}/SuppFigure4a_AvanaRs2_comparison_boxplot_{Dat}.pdf"))
 #===== Cell Line Variability (Extended Figure 4c) =====
 sampleInfo <- load.from.taiga(data.name='avana-public-21q4-e1b8', 
                               data.version=4,
@@ -84,9 +86,9 @@ s4c <- ggplot(nnmdCL,aes(x = lineage,y = nnmd,label=cl))+
                             color="black",
                             family="Helvetica",
                             point.padding = 1,arrow=T)
-ggsave(s4c,filename = glue("{outdir}/ExFigure4c_lineage_violin_h3_{Dat}.pdf"),width=15,height = 4.5)
+ggsave(s4c,filename = glue("{outdir}/SuppFigure4c_lineage_violin_h3_{Dat}.pdf"),width=15,height = 4.5)
 #===== Source data output =====
 write.xlsx(list("Panel a" = s4a$data,
                 "Panel c" = s4c$data),
-           glue("{outdir}/ExFigure4_sourceData_{Dat}.xlsx"),
+           glue("{SourceOutdir}/SuppFigure4_sourceData_{Dat}.xlsx"),
            overwrite = T)
